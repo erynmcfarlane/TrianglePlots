@@ -1,6 +1,6 @@
 #### everyone hated that I was trying to do this in slim, so we're going to try to do this using dfuse instead.
 
-###NB, this isn't R code, I'm just writing it hear for git purposes
+###NB, this isn't R code, I'm just writing it here for git purposes
 
 ### all new dfuse simulations to look at how assymetry affects consisency in SNPs that are or aren't under selection ####
 ### all of these are 1 deme cases, rather than 11 deme cases
