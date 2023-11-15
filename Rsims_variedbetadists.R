@@ -55,8 +55,36 @@ sim.y.gen1 <- matrix(rbinom(nloci*(nind-nrow(F1_genomes))/2, 2, prob=sim.q), nro
 gen1<-rbind(sim.x.gen1, sim.y.gen1, F1_genomes)
 ### let's do a triangle plot here?
 ### need to get heterozygosity and Q12 for each individual
+Q12<-matrix(nrow=nrow(gen1), ncol=1)
+het<-matrix(nrow=nrow(gen1), ncol=ncol(gen1))
+for(i in 1:nrow(gen1)){
+  for(j in 1:ncol(gen1)){
+  het[i,j]<-ifelse(gen1[i, j]==1, 1, 0)
+  }
+  Q12[i]<-rowSums(het)/ncol(gen1)
+}
 
+#gen<-rep(1, 2000)
+#individual<-(1:2000)
+#phenotype<-rep(-9, 2000)
+#sex<-sample(1:2, 2000, replace=TRUE)
 
+###change gen1 into plink happy format
+ifelse(gen1==0, "A A", ifelse(gen1==1, "A C", "C C"))->gen1_AC
+cbind(rep(1, 2000), (1:2000), sample(1:2, 2000, replace=TRUE),rep(0, 2000), rep(0, 2000), rep(-9, 2000), gen1_AC)->gen1_ped
+
+chromosomes<-rep(1:20, each=500)
+locus<-rep(1:500, 20)
+locus_name<-paste0(chromosomes,":", locus)
+
+gen1_map<-cbind.data.frame(chromosomes, locus_name, rep(0,2000), locus)
+
+write.table(gen1_ped, file="gen1.ped", quote=FALSE, col.names=FALSE, row.names=FALSE)
+write.table(gen1_map, file="gen1.map", quote=FALSE, col.names=FALSE, row.names=FALSE)
+
+system("/Users/Eryn/PATH/plink --file gen1 --make-bed --out gen1")
+system("~/admixture gen1.bed 2")
+read.table("gen1.2.Q")->gen1_q
 
 ###gen 2 - now that hybridization has started, I'm still going to have half of the individuals be 'pure parental types' and half be the result of this population interbreeding
 
@@ -67,3 +95,92 @@ for(i in 1:nrow(gen1)){
                                      ifelse(gen1[i, j]==1, sample(0:1, 1, replace=FALSE), 1))
   }
 }
+
+x.parents.g1<-sample(1:2000, 2000, replace=FALSE)
+
+gametes.gen1[x.parents.g1[1:1000],]+gametes.gen1[x.parents.g1[1001:2000],]->F2_genomes
+
+sim.x.gen2 <- matrix(rbinom(nloci*(nind-nrow(F2_genomes))/2, 2, prob=sim.p), nrow=(nind-nrow(F2_genomes))/2, ncol=nloci) ### this gives us individuals in rows and snps in columns
+sim.y.gen2 <- matrix(rbinom(nloci*(nind-nrow(F2_genomes))/2, 2, prob=sim.q), nrow=(nind-nrow(F2_genomes))/2, ncol=nloci) ### this gives us individuals in rows and snps in columns
+
+gen2<-rbind(sim.x.gen2, sim.y.gen2, F2_genomes)
+### let's do a triangle plot here?
+### need to get heterozygosity and Q12 for each individual
+### this takes annoyingly long to run. Don't panic
+Q12_gen2<-matrix(nrow=nrow(gen2), ncol=1)
+het_gen2<-matrix(nrow=nrow(gen2), ncol=ncol(gen2))
+for(i in 1:nrow(gen2)){
+  for(j in 1:ncol(gen2)){
+    het_gen2[i,j]<-ifelse(gen2[i, j]==1, 1, 0)
+  }
+  Q12_gen2[i]<-rowSums(het_gen2)/ncol(gen2)
+}
+
+###change gen2 into plink happy format
+ifelse(gen2==0, "A A", ifelse(gen2==1, "A C", "C C"))->gen2_AC
+cbind(rep(2, 2000), (1:2000), sample(1:2, 2000, replace=TRUE),rep(0, 2000), rep(0, 2000), rep(-9, 2000), gen2_AC)->gen2_ped
+
+chromosomes<-rep(1:20, each=500)
+locus<-rep(1:500, 20)
+locus_name<-paste0(chromosomes,":", locus)
+
+gen2_map<-cbind.data.frame(chromosomes, locus_name, rep(0,2000), locus)
+
+write.table(gen2_ped, file="gen2.ped", quote=FALSE, col.names=FALSE, row.names=FALSE)
+write.table(gen2_map, file="gen2.map", quote=FALSE, col.names=FALSE, row.names=FALSE)
+
+system("/Users/Eryn/PATH/plink --file gen2 --make-bed --out gen2")
+
+### Run admixture to get q
+system("~/admixture gen2.bed 2")
+read.table("gen2.2.Q")->gen2_q
+
+
+### gen 3 ###
+
+
+gametes.gen2<-matrix(nrow=nrow(gen2), ncol=ncol(gen2))
+for(i in 1:nrow(gen2)){
+  for(j in 1:ncol(gen2)){
+    gametes.gen2[i, j]<-ifelse(gen2[i, j]==0, 0, 
+                               ifelse(gen2[i, j]==1, sample(0:1, 1, replace=FALSE), 1))
+  }
+}
+
+x.parents.g2<-sample(1:2000, 2000, replace=FALSE)
+
+gametes.gen2[x.parents.g2[1:1000],]+gametes.gen2[x.parents.g2[1001:2000],]->F3_genomes
+
+sim.x.gen3 <- matrix(rbinom(nloci*(nind-nrow(F3_genomes))/2, 2, prob=sim.p), nrow=(nind-nrow(F3_genomes))/2, ncol=nloci) ### this gives us individuals in rows and snps in columns
+sim.y.gen3 <- matrix(rbinom(nloci*(nind-nrow(F3_genomes))/2, 2, prob=sim.q), nrow=(nind-nrow(F3_genomes))/2, ncol=nloci) ### this gives us individuals in rows and snps in columns
+
+gen3<-rbind(sim.x.gen3, sim.y.gen3, F3_genomes)
+### let's do a triangle plot here?
+### need to get heterozygosity and Q12 for each individual
+Q12_gen3<-matrix(nrow=nrow(gen3), ncol=1)
+het_gen3<-matrix(nrow=nrow(gen3), ncol=ncol(gen3))
+for(i in 1:nrow(gen3)){
+  for(j in 1:ncol(gen3)){
+    het_gen3[i,j]<-ifelse(gen3[i, j]==1, 1, 0)
+  }
+  Q12_gen3[i]<-rowSums(het_gen3)/ncol(gen3)
+}
+
+###change gen2 into plink happy format
+ifelse(gen3==0, "A A", ifelse(gen3==1, "A C", "C C"))->gen3_AC
+cbind(rep(3, 2000), (1:2000), sample(1:2, 2000, replace=TRUE),rep(0, 2000), rep(0, 2000), rep(-9, 2000), gen3_AC)->gen3_ped
+
+chromosomes<-rep(1:20, each=500)
+locus<-rep(1:500, 20)
+locus_name<-paste0(chromosomes,":", locus)
+
+gen3_map<-cbind.data.frame(chromosomes, locus_name, rep(0,2000), locus)
+
+write.table(gen3_ped, file="gen3.ped", quote=FALSE, col.names=FALSE, row.names=FALSE)
+write.table(gen3_map, file="gen3.map", quote=FALSE, col.names=FALSE, row.names=FALSE)
+
+system("/Users/Eryn/PATH/plink --file gen3 --make-bed --out gen3")
+
+### Run admixture to get q
+system("~/admixture gen3.bed 2")
+read.table("gen3.2.Q")->gen3_q
