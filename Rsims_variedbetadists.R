@@ -5,13 +5,13 @@
 set.seed(42)
 nloci<-10000  ## we will have data from nloci
 nind<-2000  ## we will have data from nind that were sampled from the true population
-sim.theta<-5  # high parameter means high polymorphism, must be positive and > zero, can be thought of as analygous to nucleotide polymorphism
+#sim.theta<-5  # high parameter means high polymorphism, must be positive and > zero, can be thought of as analygous to nucleotide polymorphism
 
 ## simulate allele frequencies at nloci number of loci, by random draws from a beta
 ### I've made these beta distributions really uneven. But I could make them a lot more even and see what happens.
-sim.p<-rbeta(nloci, 1, 5)
+sim.p<-rbeta(nloci, 1, 2)
 hist(sim.p, breaks=seq(0,1,0.1))
-sim.q<-rbeta(nloci, 5, 1)
+sim.q<-rbeta(nloci, 2, 1)
 hist(sim.q, breaks=seq(0,1,0.1))
 # simulate genotypes in the sample
 sim.x <- matrix(rbinom(nloci*nind, 2, prob=sim.p), nrow=nind, ncol=nloci) ### this gives us individuals in rows and snps in columns
@@ -19,6 +19,26 @@ str(sim.x)
 
 sim.y <- matrix(rbinom(nloci*nind, 2, prob=sim.q), nrow=nind, ncol=nloci) ### this gives us individuals in rows and snps in columns
 str(sim.y)
+
+### add FST between the two here:
+
+parents<-rbind(sim.x, sim.y)
+### make parental populations into plink .bed file
+ifelse(parents==0, "A A", ifelse(parents==1, "A C", "C C"))->parents_AC
+cbind(rep(1, 2000), (1:2000), sample(1:2, 2000, replace=TRUE),rep(0, 2000), rep(0, 2000), rep(-9, 2000), parents_AC)->parents_ped
+
+chromosomes<-rep(1:20, each=500)
+locus<-rep(1:500, 20)
+locus_name<-paste0(chromosomes,":", locus)
+
+parents_map<-cbind.data.frame(chromosomes, locus_name, rep(0,2000), locus)
+
+write.table(parents_ped, file="parents.ped", quote=FALSE, col.names=FALSE, row.names=FALSE)
+write.table(parents_map, file="parents.map", quote=FALSE, col.names=FALSE, row.names=FALSE)
+
+system("/Users/Eryn/PATH/plink --file parents --make-bed --out parents")
+system("~/admixture parents.bed 2")
+
 
 #### First generation
 
@@ -62,7 +82,7 @@ for(i in 1:nrow(gen1)){
   het[i,j]<-ifelse(gen1[i, j]==1, 1, 0)
   }
 }
-Q12<-rowSums(het)/ncol(gen1)
+Q12_gen1<-rowSums(het)/ncol(gen1)
 
 #gen<-rep(1, 2000)
 #individual<-(1:2000)
@@ -85,6 +105,7 @@ write.table(gen1_map, file="gen1.map", quote=FALSE, col.names=FALSE, row.names=F
 system("/Users/Eryn/PATH/plink --file gen1 --make-bed --out gen1")
 system("~/admixture gen1.bed 2")
 read.table("gen1.2.Q")->gen1_q
+gen1_qQ<-cbind(gen1_q[,1], Q12_gen1)
 
 ###gen 2 - now that hybridization has started, I'm still going to have half of the individuals be 'pure parental types' and half be the result of this population interbreeding
 
@@ -135,7 +156,7 @@ system("/Users/Eryn/PATH/plink --file gen2 --make-bed --out gen2")
 ### Run admixture to get q
 system("~/admixture gen2.bed 2")
 read.table("gen2.2.Q")->gen2_q
-
+gen2_qQ<-cbind(gen2_q[,1], Q12_gen2)
 
 ### gen 3 ###
 
@@ -185,6 +206,7 @@ system("/Users/Eryn/PATH/plink --file gen3 --make-bed --out gen3")
 ### Run admixture to get q
 system("~/admixture gen3.bed 2")
 read.table("gen3.2.Q")->gen3_q
+gen3_qQ<-cbind(gen3_q[,1], Q12_gen3)
 
 ### gen 4
 ### parents gen(i)-1
@@ -234,6 +256,8 @@ system("/Users/Eryn/PATH/plink --file gen4 --make-bed --out gen4")
 ### Run admixture to get q
 system("~/admixture gen4.bed 2", wait=TRUE)
 read.table("gen4.2.Q")->gen4_q
+gen4_qQ<-cbind(gen4_q[,1], Q12_gen4)
+
 
 ### gen 5
 
@@ -283,3 +307,32 @@ system("/Users/Eryn/PATH/plink --file gen5 --make-bed --out gen5")
 ### Run admixture to get q
 system("~/admixture gen5.bed 2", wait=TRUE)
 read.table("gen5.2.Q")->gen5_q
+gen5_qQ<-cbind(gen5_q[,1], Q12_gen5)
+
+
+### Triangle plots for all generations before this:
+library(MetBrewer)
+triangle_cols <- met.brewer("OKeeffe1", 20)
+
+triangleplot<-function(filename, qQ12_data, generation){
+### file name is a .pdf in quotes
+### qQ12_data is q in first column, Q12 in second column, and each row is an individual
+### generation is to set colours to be consistent for each generation
+pdf(file=filename, width=10, height=10)
+plot(0, type="n", xlab="q", ylab="Q", xlim=c(0, 1), ylim=c(0, 1), las=1, cex.lab=1.5, cex.axis=1.25)
+segments(0, 0, 0.5, 1, lwd=3)
+segments(1, 0, 0.5, 1, lwd=3)
+for (i in 1:500)
+{
+  points(qQ12_data[i,1], qQ12_data[i,2], pch=21, bg=adjustcolor(triangle_cols[generation], alpha.f=0.75), cex=2)
+}
+box(lwd=2)
+dev.off()  
+}
+
+
+triangleplot("gen1_beta15.pdf", gen1_qQ, 1)
+triangleplot("gen2_beta15.pdf", gen2_qQ, 2)
+triangleplot("gen3_beta15.pdf", gen3_qQ, 3)
+triangleplot("gen4_beta15.pdf", gen4_qQ, 4)
+triangleplot("gen5_beta15.pdf", gen5_qQ, 5)
