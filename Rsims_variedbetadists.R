@@ -1,5 +1,7 @@
 #### simulate two different populations without fixed markers
 
+
+### NEED TO PULL Q12 MODEL FROM ZACH's PAPER
 ### This is from Alex Buerkle's Population Genetics lab notes
 ###simulate some data
 set.seed(42)
@@ -16,7 +18,7 @@ source('plot_triangles.R') ###Josh's triangle plot function
 
 ## simulate allele frequencies at nloci number of loci, by random draws from a beta
 ### I've made these beta distributions really uneven. But I could make them a lot more even and see what happens.
-fst_high<-c(10, 8)
+fst_high<-c(10, 8) ### these thetas are way too high
 fst_medium<-c(22,20)
 fst_low<-c(70,68)
 
