@@ -18,9 +18,9 @@ source('plot_triangles.R') ###Josh's triangle plot function
 
 ## simulate allele frequencies at nloci number of loci, by random draws from a beta
 ### I've made these beta distributions really uneven. But I could make them a lot more even and see what happens.
-fst_high<-c(10, 8) ### these thetas are way too high
-fst_medium<-c(22,20)
-fst_low<-c(70,68)
+fst_high<-c(3, 1) ### these thetas are way too high
+fst_medium<-c(6,4)
+fst_low<-c(10,8)
 
 ######################## FST_high for 5 generations ######
 sim.p<-rbeta(nloci, fst_high[1], fst_high[2])
